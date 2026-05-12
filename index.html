@@ -8,12 +8,11 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: rgba(14,14,15,0.45); --surface: rgba(22,22,24,0.60); --border: #2a2a2e;
+    --bg: #0e0e0f; --surface: #161618; --border: #2a2a2e;
     --accent: #e8ff47; --accent-dim: rgba(232,255,71,0.12);
     --text: #f0f0f0; --muted: #666; --danger: #ff4f4f;
   }
-  html { background: transparent; }
-  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; backdrop-filter: blur(2px); }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; }
   .wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 16px; }
   .label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
@@ -32,13 +31,13 @@
   .progress-fill { height: 100%; background: var(--accent); transition: width 1s linear; }
   .time-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   .input-group { display: flex; flex-direction: column; gap: 6px; }
-  .input-group input { background: rgba(14,14,15,0.55); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; text-align: center; padding: 10px 8px; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -moz-appearance: textfield; }
+  .input-group input { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; text-align: center; padding: 10px 8px; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -moz-appearance: textfield; }
   .input-group input::-webkit-outer-spin-button, .input-group input::-webkit-inner-spin-button { -webkit-appearance: none; }
   .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
   .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .btn { border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 13px; cursor: pointer; transition: transform 0.15s, opacity 0.15s; }
   .btn:active { transform: scale(0.96); }
-  .btn-primary { background: var(--accent); color: #0e0e0f; grid-column: span 2; font-size: 14px; }
+  .btn-primary { background: var(--accent); color: #0e0e0f; font-size: 14px; }
   .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
   .btn-secondary:hover { border-color: #444; color: var(--text); }
   .done-banner { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 10px; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; }
@@ -46,7 +45,7 @@
   .done-title { font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; }
   .history-list { display: flex; flex-direction: column; gap: 8px; }
   .history-empty { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; text-align: center; padding: 8px 0; }
-  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(14,14,15,0.45); border: 1px solid var(--border); border-radius: 10px; }
+  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
   .history-left { display: flex; flex-direction: column; gap: 2px; }
   .history-duration { font-size: 14px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
   .history-date { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
@@ -103,9 +102,8 @@
       </div>
     </div>
     <div class="controls">
-      <button class="btn btn-primary" id="mainBtn" onclick="handleMain()">開始</button>
       <button class="btn btn-secondary" onclick="handleReset()">重置</button>
-      <button class="btn btn-secondary" onclick="handleSet()">套用設定</button>
+      <button class="btn btn-primary" id="mainBtn" onclick="handleMain()">開始</button>
     </div>
   </div>
 
