@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>計時器</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0e0f; --surface: #161618; --border: #2a2a2e;
+    --accent: #e8ff47; --accent-dim: rgba(232,255,71,0.12);
+    --text: #f0f0f0; --muted: #666; --danger: #ff4f4f;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; }
+  .wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 16px; }
+  .label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .time-row { display: flex; align-items: baseline; justify-content: center; gap: 2px; }
+  .digits { font-size: clamp(52px, 13vw, 72px); font-weight: 800; font-family: 'DM Mono', monospace; letter-spacing: -2px; color: var(--text); transition: color 0.3s; line-height: 1; }
+  .digits.warning { color: var(--danger); }
+  .colon { font-size: clamp(36px, 9vw, 52px); font-family: 'DM Mono', monospace; font-weight: 300; color: var(--muted); line-height: 1; animation: blink 1s step-end infinite; }
+  .colon.paused { animation: none; opacity: 0.3; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
+  .status-row { display: flex; align-items: center; justify-content: space-between; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+  .dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .dot.warn { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: pulse 0.6s ease infinite alternate; }
+  @keyframes pulse { to { transform: scale(1.6); } }
+  .progress-bar { height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 1s linear; }
+  .time-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group input { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; text-align: center; padding: 10px 8px; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -moz-appearance: textfield; }
+  .input-group input::-webkit-outer-spin-button, .input-group input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn { border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 13px; cursor: pointer; transition: transform 0.15s, opacity 0.15s; }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: var(--accent); color: #0e0e0f; grid-column: span 2; font-size: 14px; }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: #444; color: var(--text); }
+  .done-banner { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 10px; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; }
+  .done-banner.show { display: flex; }
+  .done-title { font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; }
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-empty { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; text-align: center; padding: 8px 0; }
+  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+  .history-left { display: flex; flex-direction: column; gap: 2px; }
+  .history-duration { font-size: 14px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
+  .history-date { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .history-delete { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px; border-radius: 6px; transition: color 0.2s; }
+  .history-delete:hover { color: var(--danger); }
+  .clear-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; padding: 0; transition: color 0.2s; }
+  .clear-btn:hover { color: var(--danger); }
+  .history-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .history-toggle:hover .label { color: var(--text); }
+  .toggle-right { display: flex; align-items: center; gap: 12px; }
+  .chevron { font-size: 14px; color: var(--muted); transition: transform 0.25s ease; display: inline-block; }
+  .chevron.open { transform: rotate(180deg); }
+  .history-body { overflow: hidden; max-height: 0; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0; }
+  .history-body.open { max-height: 600px; opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card">
+    <span class="label">倒數計時器</span>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
+    <div class="time-row">
+      <span class="digits" id="dispH">00</span>
+      <span class="colon" id="colon1">:</span>
+      <span class="digits" id="dispM">05</span>
+      <span class="colon" id="colon2">:</span>
+      <span class="digits" id="dispS">00</span>
+    </div>
+    <div class="status-row">
+      <span class="label" id="statusText">準備就緒</span>
+      <div class="dot" id="dot"></div>
+    </div>
+    <div class="done-banner" id="doneBanner">
+      <span class="done-title">時間到！</span>
+      <span class="label">TIMES UP</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">設定時間</span>
+    <div class="time-inputs">
+      <div class="input-group">
+        <input type="number" id="inH" min="0" max="99" value="0">
+        <span class="label" style="text-align:center">時</span>
+      </div>
+      <div class="input-group">
+        <input type="number" id="inM" min="0" max="59" value="5">
+        <span class="label" style="text-align:center">分</span>
+      </div>
+      <div class="input-group">
+        <input type="number" id="inS" min="0" max="59" value="0">
+        <span class="label" style="text-align:center">秒</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-primary" id="mainBtn" onclick="handleMain()">開始</button>
+      <button class="btn btn-secondary" onclick="handleReset()">重置</button>
+      <button class="btn btn-secondary" onclick="handleSet()">套用設定</button>
+    </div>
+  </div>
+
+  <div class="card" style="gap:0">
+    <div class="history-toggle" onclick="toggleHistory()">
+      <span class="label">歷史紀錄 <span id="histCount" style="color:var(--muted)"></span></span>
+      <div class="toggle-right">
+        <button class="clear-btn" onclick="event.stopPropagation();clearHistory()">全部清除</button>
+        <span class="chevron" id="chevron">▾</span>
+      </div>
+    </div>
+    <div class="history-body" id="historyBody">
+      <div style="height:16px"></div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+const STORE_KEY = 'notion_timer_state';
+const HIST_KEY  = 'notion_timer_history';
+
+let total = 0, remaining = 0, interval = null;
+let running = false, finished = false;
+let startedAt = null;
+
+const dispH = document.getElementById('dispH');
+const dispM = document.getElementById('dispM');
+const dispS = document.getElementById('dispS');
+const c1 = document.getElementById('colon1');
+const c2 = document.getElementById('colon2');
+const mainBtn = document.getElementById('mainBtn');
+const statusText = document.getElementById('statusText');
+const dot = document.getElementById('dot');
+const doneBanner = document.getElementById('doneBanner');
+const progressFill = document.getElementById('progressFill');
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function renderTime(s){
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  dispH.textContent=pad(h); dispM.textContent=pad(m); dispS.textContent=pad(sec);
+  const warn = s<=10 && s>0;
+  [dispH,dispM,dispS].forEach(el=>el.classList.toggle('warning',warn));
+  dot.className='dot'+(running?(warn?' warn':' on'):'');
+  progressFill.style.width = total>0 ? (s/total*100)+'%' : '100%';
+}
+
+function saveState(){
+  localStorage.setItem(STORE_KEY, JSON.stringify({
+    total, remaining, running, finished,
+    startedAt: startedAt ? startedAt : null,
+    inH: document.getElementById('inH').value,
+    inM: document.getElementById('inM').value,
+    inS: document.getElementById('inS').value,
+  }));
+}
+
+function loadState(){
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(!s) return false;
+    document.getElementById('inH').value = s.inH||0;
+    document.getElementById('inM').value = s.inM||5;
+    document.getElementById('inS').value = s.inS||0;
+    total = s.total||0;
+    finished = s.finished||false;
+
+    if(s.running && s.startedAt && !s.finished){
+      const elapsed = Math.floor((Date.now() - s.startedAt)/1000);
+      remaining = Math.max(0, s.remaining - elapsed);
+      if(remaining<=0){ finished=true; remaining=0; }
+      else { startedAt = Date.now() - (s.remaining - remaining)*1000; }
+    } else {
+      remaining = s.remaining||0;
+      startedAt = s.startedAt;
+    }
+    return true;
+  } catch(e){ return false; }
+}
+
+function getInput(){
+  const h=parseInt(document.getElementById('inH').value)||0;
+  const m=parseInt(document.getElementById('inM').value)||0;
+  const s=parseInt(document.getElementById('inS').value)||0;
+  return h*3600+m*60+s;
+}
+
+function fmtDuration(secs){
+  const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+  if(h>0) return `${h}h ${pad(m)}m ${pad(s)}s`;
+  if(m>0) return `${m}m ${pad(s)}s`;
+  return `${s}s`;
+}
+
+function addHistory(secs){
+  const hist = JSON.parse(localStorage.getItem(HIST_KEY)||'[]');
+  hist.unshift({ secs, at: Date.now() });
+  if(hist.length>20) hist.pop();
+  localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+  renderHistory();
+}
+
+function toggleHistory(){
+  const body = document.getElementById('historyBody');
+  const chev = document.getElementById('chevron');
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+function clearHistory(){
+  localStorage.removeItem(HIST_KEY);
+  renderHistory();
+}
+
+function renderHistory(){
+  const hist = JSON.parse(localStorage.getItem(HIST_KEY)||'[]');
+  const list = document.getElementById('historyList');
+  const countEl = document.getElementById('histCount');
+  countEl.textContent = hist.length > 0 ? `(${hist.length})` : '';
+  if(hist.length===0){
+    list.innerHTML='<div class="history-empty">還沒有紀錄</div>';
+    return;
+  }
+  list.innerHTML = hist.map((h,i)=>{
+    const d = new Date(h.at);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `<div class="history-item">
+      <div class="history-left">
+        <span class="history-duration">${fmtDuration(h.secs)}</span>
+        <span class="history-date">${dateStr}</span>
+      </div>
+      <button class="history-delete" onclick="deleteHistory(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function deleteHistory(i){
+  const hist = JSON.parse(localStorage.getItem(HIST_KEY)||'[]');
+  hist.splice(i,1);
+  localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+  renderHistory();
+}
+
+function startTick(){
+  interval = setInterval(()=>{
+    remaining--;
+    renderTime(remaining);
+    saveState();
+    if(remaining<=0){
+      clearInterval(interval);
+      running=false; finished=true;
+      doneBanner.classList.add('show');
+      [c1,c2].forEach(c=>c.classList.add('paused'));
+      statusText.textContent='完成';
+      dot.className='dot';
+      mainBtn.textContent='重新開始';
+      addHistory(total);
+      saveState();
+    }
+  },1000);
+}
+
+function handleMain(){
+  if(finished){ handleReset(); return; }
+  if(remaining<=0){ handleSet(); return; }
+  if(running){
+    clearInterval(interval);
+    running=false;
+    [c1,c2].forEach(c=>c.classList.add('paused'));
+    statusText.textContent='已暫停';
+    dot.className='dot';
+    mainBtn.textContent='繼續';
+    startedAt=null;
+    saveState();
+  } else {
+    running=true;
+    startedAt=Date.now();
+    [c1,c2].forEach(c=>c.classList.remove('paused'));
+    statusText.textContent='計時中';
+    mainBtn.textContent='暫停';
+    saveState();
+    startTick();
+  }
+}
+
+function handleSet(){
+  clearInterval(interval);
+  running=false; finished=false; startedAt=null;
+  total=getInput(); remaining=total;
+  doneBanner.classList.remove('show');
+  [c1,c2].forEach(c=>c.classList.remove('paused'));
+  statusText.textContent='準備就緒';
+  dot.className='dot';
+  mainBtn.textContent='開始';
+  renderTime(remaining);
+  saveState();
+}
+
+function handleReset(){
+  clearInterval(interval);
+  running=false; finished=false; startedAt=null;
+  total=getInput(); remaining=total;
+  doneBanner.classList.remove('show');
+  [c1,c2].forEach(c=>c.classList.remove('paused'));
+  statusText.textContent='準備就緒';
+  dot.className='dot';
+  mainBtn.textContent='開始';
+  renderTime(remaining);
+  saveState();
+}
+
+// Init
+const restored = loadState();
+if(!restored){ total=getInput(); remaining=total; }
+renderTime(remaining);
+renderHistory();
+
+if(finished){
+  doneBanner.classList.add('show');
+  statusText.textContent='完成';
+  mainBtn.textContent='重新開始';
+  [c1,c2].forEach(c=>c.classList.add('paused'));
+} else if(running){
+  running=false;
+  running=true;
+  [c1,c2].forEach(c=>c.classList.remove('paused'));
+  statusText.textContent='計時中';
+  mainBtn.textContent='暫停';
+  startTick();
+}
+</script>
+</body>
+</html>
