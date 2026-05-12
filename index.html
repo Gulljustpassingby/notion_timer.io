@@ -93,7 +93,7 @@
         <span class="label" style="text-align:center">時</span>
       </div>
       <div class="input-group">
-        <input type="number" id="inM" min="0" max="59" value="5">
+        <input type="number" id="inM" min="0" max="59" value="45">
         <span class="label" style="text-align:center">分</span>
       </div>
       <div class="input-group">
@@ -168,7 +168,7 @@ function loadState(){
     const s = JSON.parse(localStorage.getItem(STORE_KEY));
     if(!s) return false;
     document.getElementById('inH').value = s.inH||0;
-    document.getElementById('inM').value = s.inM||5;
+    document.getElementById('inM').value = s.inM||45;
     document.getElementById('inS').value = s.inS||0;
     total = s.total||0;
     finished = s.finished||false;
